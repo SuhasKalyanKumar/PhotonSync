@@ -1,0 +1,5 @@
+bleak>=0.19.0
+mss>=6.1.0
+numpy>=1.20.0
+vosk>=0.3.30
+soundcard>=0.4.3
