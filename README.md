@@ -18,7 +18,7 @@ PhotonSync is a lightweight Python utility that links your Windows PC to Bluetoo
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/SuhasKalyanKumar/PhotonSync.git](https://github.com/SuhasKalyanKumar/PhotonSync.git)
+git clone https://github.com/SuhasKalyanKumar/PhotonSync.git
 cd PhotonSync
 
 # 2. Install the required dependencies
