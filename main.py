@@ -22,10 +22,11 @@ APP_VERSION = "v1.0.0"
 # =============================================================
 # AUTOMATIC VOSK MODEL DOWNLOADER
 # =============================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_URL = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip"
-MODEL_ZIP = "model.zip"
-MODEL_DIR = "model"
-EXTRACTED_DIR_NAME = "vosk-model-small-en-us-0.15"
+MODEL_ZIP = os.path.join(BASE_DIR, "model.zip")
+MODEL_DIR = os.path.join(BASE_DIR, "model")
+EXTRACTED_DIR_NAME = os.path.join(BASE_DIR, "vosk-model-small-en-us-0.15")
 
 def download_vosk_model_if_missing():
     """Checks if the Vosk model exists locally; if not, downloads and extracts it automatically."""
@@ -36,7 +37,7 @@ def download_vosk_model_if_missing():
             
             print(f"[{APP_NAME}] 📦 Extracting model archive...")
             with zipfile.ZipFile(MODEL_ZIP, 'r') as zip_ref:
-                zip_ref.extractall(".")
+                zip_ref.extractall(BASE_DIR)
                 
             if os.path.exists(EXTRACTED_DIR_NAME):
                 if os.path.exists(MODEL_DIR):
@@ -204,13 +205,13 @@ def voice_listener_worker():
         log_msg("⚠️ Voice libraries missing. Speech engine disabled.")
         return
 
-    if not os.path.exists("model"):
+    if not os.path.exists(MODEL_DIR):
         log_msg("⚠️ Vosk 'model' folder missing. Voice listener aborted.")
         return
 
     try:
         sample_rate = 16000
-        model = Model("model")
+        model = Model(MODEL_DIR)
 
         valid_phrases = [
             "turn on", "turn off", "power on", "power off", "on", "off",
@@ -221,15 +222,22 @@ def voice_listener_worker():
         grammar_json = json.dumps(valid_phrases)
         recognizer = KaldiRecognizer(model, sample_rate, grammar_json)
 
-        physical_mics = sc.all_microphones(include_loopback=False)
-        if not physical_mics:
-            log_msg("⚠️ No physical microphone detected!")
-            return
-        mic = physical_mics[0]
-        
+        # Use the Windows default input device; fall back to the first mic only if there is no default
+        try:
+            mic = sc.default_microphone()
+        except Exception:
+            mic = None
+        if mic is None:
+            physical_mics = sc.all_microphones(include_loopback=False)
+            if not physical_mics:
+                log_msg("⚠️ No physical microphone detected!")
+                return
+            mic = physical_mics[0]
+
         block_size = int(sample_rate * 0.25)
 
         with mic.recorder(samplerate=sample_rate, channels=1) as recorder:
+            log_msg(f"🎙️ Voice engine listening on: {mic.name}")
             while is_running:
                 data = recorder.record(numframes=block_size)
 
